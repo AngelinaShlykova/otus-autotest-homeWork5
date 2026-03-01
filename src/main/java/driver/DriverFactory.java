@@ -73,15 +73,6 @@ public class DriverFactory {
                 throw new IllegalArgumentException("Не поддерживаемый браузер: " + browserType);
         }
 
-        // Устанавливаем ТОЛЬКО необходимые таймауты:
-        // 1. Implicit wait — для ожидания появления элементов (защита от "мигания" элементов)
-        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
-
-        // 2. Page load timeout — для защиты от зависания при загрузке страницы
-        driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(30));
-
-        // scriptTimeout НЕ устанавливаем — не используем executeAsyncScript
-
         return driver;
     }
 
