@@ -11,27 +11,28 @@ import org.openqa.selenium.firefox.FirefoxOptions;
 
 import java.time.Duration;
 
+/**
+ * Фабрика для создания и настройки WebDriver
+ * Драйвер НЕ статический — создаётся новый экземпляр для каждого теста
+ */
 public class DriverFactory {
 
-    private static WebDriver driver;
-
+    /**
+     * Создание нового экземпляра драйвера
+     * @return настроенный WebDriver
+     */
     public static WebDriver createDriver() {
-        if (driver != null) {
-            return driver;
-        }
-
         BrowserType browserType = BrowserType.fromProperty();
         boolean headless = Boolean.parseBoolean(System.getProperty("headless", "false"));
+        WebDriver driver = null;
 
         switch (browserType) {
             case CHROME:
-                String browserVersion = System.getProperty("browser.version", "116");
                 WebDriverManager.chromedriver()
-                        .browserVersion(browserVersion)
+                        .browserVersion(System.getProperty("browser.version", "116"))
                         .setup();
 
                 ChromeOptions chromeOptions = new ChromeOptions();
-
                 chromeOptions.addArguments("--no-sandbox");
                 chromeOptions.addArguments("--disable-dev-shm-usage");
                 chromeOptions.addArguments("--disable-gpu");
@@ -45,7 +46,6 @@ public class DriverFactory {
                 String chromiumPath = System.getProperty("chromium.path");
                 if (chromiumPath != null && !chromiumPath.isEmpty()) {
                     chromeOptions.setBinary(chromiumPath);
-                    System.out.println("Используется Chromium по пути: " + chromiumPath);
                 }
 
                 driver = new ChromeDriver(chromeOptions);
@@ -73,24 +73,24 @@ public class DriverFactory {
                 throw new IllegalArgumentException("Не поддерживаемый браузер: " + browserType);
         }
 
+        // Устанавливаем ТОЛЬКО необходимые таймауты:
+        // 1. Implicit wait — для ожидания появления элементов (защита от "мигания" элементов)
         driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
+
+        // 2. Page load timeout — для защиты от зависания при загрузке страницы
         driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(30));
-        driver.manage().timeouts().scriptTimeout(Duration.ofSeconds(30));
+
+        // scriptTimeout НЕ устанавливаем — не используем executeAsyncScript
 
         return driver;
     }
 
-    public static WebDriver getDriver() {
-        if (driver == null) {
-            throw new IllegalStateException("Драйвер не инициализирован.");
-        }
-        return driver;
-    }
-
-    public static void quitDriver() {
+    /**
+     * Закрытие драйвера и освобождение ресурсов
+     */
+    public static void quitDriver(WebDriver driver) {
         if (driver != null) {
             driver.quit();
-            driver = null;
         }
     }
 }
